@@ -288,7 +288,7 @@ def load_adj(pkl_filename, adjtype):
 #     return data
 
 def load_dataset(dataset_dir, batch_size, valid_batch_size= None, test_batch_size=None):
-    cat_data = np.load('../Datasets/PEMS08_r1_d0_w0_astcgn.npz')
+    cat_data = np.load('../../data/traf_Datasets/PEMS08_r1_d0_w0_astcgn.npz')
     
     data = {}
     # data['train_x'] = cat_data['train_x']
