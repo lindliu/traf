@@ -305,7 +305,7 @@ class trainer6():
         rmse = util.masked_rmse(predict,real,0.0).item()
         return loss.item(),mae,mape,rmse 
     
-    
+                       # in_dim, seq_length, num_nodes, nhid , dropout, lrate, wdecay, device, supports,decay
 class trainer7():
     def __init__(self, in_dim,in_dim_cluster, seq_length, num_nodes, cluster_nodes, nhid , dropout, lrate, wdecay, device, supports,supports_cluster,transmit,decay):
         self.model = H_GCN(device, num_nodes,cluster_nodes, dropout, supports=supports, supports_cluster=supports_cluster,

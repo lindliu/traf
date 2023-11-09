@@ -64,7 +64,7 @@ class SATT(nn.Module):
         c1 = seq
         f1 = self.conv1(c1).squeeze(1)#b,n,l
         
-        c2 = seq.permute(0,3,1,2)#b,c,n,l->b,l,n,c
+        c2 = seq.permute(0,3,1,2)#b,c,n,l->b,l,c,n
         f2 = self.conv2(c2).squeeze(1)#b,c,n
      
         logits = torch.sigmoid(torch.matmul(torch.matmul(f1,self.w),f2)+self.b)
@@ -126,14 +126,14 @@ class ST_BLOCK_0(nn.Module):
         self.bn=LayerNorm([c_out,num_nodes,tem_size])
         
     def forward(self,x,supports):
-        x_input=self.conv1(x)
-        T_coef=self.TATT(x)
+        x_input=self.conv1(x) #b,c,n,t
+        T_coef=self.TATT(x) # b,t,t
         T_coef=T_coef.transpose(-1,-2)
         x_TAt=torch.einsum('bcnl,blq->bcnq',x,T_coef)
         S_coef=self.SATT(x)#B x N x N
         
         spatial_gcn=self.dynamic_gcn(x_TAt,supports,S_coef)
-        spatial_gcn=torch.relu(spatial_gcn)
+        spatial_gcn=torch.relu(spatial_gcn) #b,c,n,t
         time_conv_output=self.time_conv(spatial_gcn)
         out=self.bn(torch.relu(time_conv_output+x_input))
         

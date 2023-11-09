@@ -32,7 +32,10 @@ parser.add_argument('--force', type=str, default=False,help="remove params dir",
 # parser.add_argument('--save',type=str,default='./garage/XiAn_City',help='save path')
 parser.add_argument('--save',type=str,default='./garage/PEMS08',help='save path')
 parser.add_argument('--expid',type=int,default=1,help='experiment id')
-parser.add_argument('--model',type=str,default='gwnet',help='adj type')
+# parser.add_argument('--model',type=str,default='gwnet',help='adj type')
+# parser.add_argument('--model',type=str,default='H_GCN_wh',help='adj type')
+# parser.add_argument('--model',type=str,default='H_GCN',help='adj type')
+parser.add_argument('--model',type=str,default='ASTGCN_Recent',help='adj type')
 parser.add_argument('--decay', type=float, default=0.92, help='decay rate of learning rate ')
 
 args = parser.parse_args()
@@ -82,7 +85,6 @@ def main():
         engine = trainer5( args.in_dim, args.seq_length, args.num_nodes, args.nhid, args.dropout,
                          args.learning_rate, args.weight_decay, device, supports, args.decay
                          )
-        
     elif args.model=='OGCRNN':
         engine = trainer8( args.in_dim, args.seq_length, args.num_nodes, args.nhid, args.dropout,
                          args.learning_rate, args.weight_decay, device, supports, args.decay
@@ -100,7 +102,7 @@ def main():
                          args.learning_rate, args.weight_decay, device, supports, args.decay
                          )
    
-        
+    
     # check parameters file
     params_path=args.save+"/"+args.model
     if os.path.exists(params_path) and args.force:
@@ -191,7 +193,7 @@ def main():
     
     outputs = []
     realy = torch.Tensor(dataloader['y_test']).to(device)
-    realy = realy.transpose(1,3)[:,0,:,:]
+    # realy = realy.transpose(1,3)[:,0,:,:]
 
     for iter, (x, y) in enumerate(dataloader['test_loader'].get_iterator()):
         testx = torch.Tensor(x).to(device)
@@ -248,3 +250,7 @@ if __name__ == "__main__":
     main()
     t2 = time.time()
     print("Total time spent: {:.4f}".format(t2-t1))
+
+# GWNET On average over 12 horizons,         Test MAE: 15.9980, Test MAPE: 0.1043, Test RMSE: 24.8106
+# H_GCN_wh On average over 12 horizons,      Test MAE: 17.6598, Test MAPE: 0.1151, Test RMSE: 26.6680
+# ASTGCN_Recent On average over 12 horizons, Test MAE: 19.3278, Test MAPE: 0.1270, Test RMSE: 28.6746

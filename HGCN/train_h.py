@@ -11,8 +11,10 @@ import random
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--device',type=str,default='cuda:0',help='')
-parser.add_argument('--data',type=str,default='data/XiAn_City',help='data path')
-parser.add_argument('--adjdata',type=str,default='data/XiAn_City/adj_mat.pkl',help='adj data path')
+# parser.add_argument('--data',type=str,default='data/XiAn_City',help='data path')
+# parser.add_argument('--adjdata',type=str,default='data/XiAn_City/adj_mat.pkl',help='adj data path')
+parser.add_argument('--data',type=str,default='data/PEMS08/PEMS08.npz',help='data path')
+parser.add_argument('--adjdata',type=str,default='data/PEMS08/PEMS08.csv',help='adj data path')
 parser.add_argument('--adjdatacluster',type=str,default='data/XiAn_City/adj_mat_cluster.pkl',help='adj data path')
 parser.add_argument('--transmit',type=str,default='data/XiAn_City/transmit.csv',help='data path')
 parser.add_argument('--adjtype',type=str,default='doubletransition',help='adj type')
@@ -31,7 +33,8 @@ parser.add_argument('--print_every',type=int,default=50,help='')
 parser.add_argument("--force", type=str, default=False,help="remove params dir", required=False)
 parser.add_argument('--save',type=str,default='./garage/XiAn_City',help='save path')
 parser.add_argument('--expid',type=int,default=1,help='experiment id')
-parser.add_argument('--model',type=str,default='gwnet',help='adj type')
+# parser.add_argument('--model',type=str,default='gwnet',help='adj type')
+parser.add_argument('--model',type=str,default='H_GCN',help='adj type')
 parser.add_argument('--decay', type=float, default=0.92, help='decay rate of learning rate ')
 
 
@@ -47,7 +50,8 @@ torch.cuda.manual_seed_all(seed)
 def main():
     #load data
     device = torch.device(args.device)
-    sensor_ids, sensor_id_to_ind, adj_mx = util.load_adj(args.adjdata,args.adjtype)
+    # sensor_ids, sensor_id_to_ind, adj_mx = util.load_adj(args.adjdata,args.adjtype)
+    adj_mx = util.load_adj(args.adjdata,args.adjtype)
     sensor_ids_cluster, sensor_id_to_ind_cluster, adj_mx_cluster = util.load_adj(args.adjdatacluster,args.adjtype)
     dataloader = util.load_dataset_cluster(args.data, args.batch_size, args.batch_size, args.batch_size)
     #scaler = dataloader['scaler']
@@ -55,7 +59,6 @@ def main():
     supports_cluster = [torch.tensor(i).to(device) for i in adj_mx_cluster]
     transmit_np=np.float32(np.loadtxt(args.transmit,delimiter=','))
     transmit=torch.tensor(transmit_np).to(device)
-    
     
     print(args)
     
@@ -230,3 +233,39 @@ if __name__ == "__main__":
     main()
     t2 = time.time()
     print("Total time spent: {:.4f}".format(t2-t1))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# import numpy as np
+# from sklearn.cluster import SpectralClustering
+# from sklearn import metrics
+# np.random.seed(0)
+
+# adj_mat = [[3,2,2,0,0,0,0,0,0],
+#            [2,3,2,0,0,0,0,0,0],
+#            [2,2,3,1,0,0,0,0,0],
+#            [0,0,1,3,3,3,0,0,0],
+#            [0,0,0,3,3,3,0,0,0],
+#            [0,0,0,3,3,3,1,0,0],
+#            [0,0,0,0,0,1,3,1,1],
+#            [0,0,0,0,0,0,1,3,1],
+#            [0,0,0,0,0,0,1,1,3]]
+
+# adj_mat = np.array(adj_mat)
+
+# sc = SpectralClustering(3, affinity='precomputed', n_init=100)
+# sc.fit(adj_mat)
+
+# print('spectral clustering')
+# print(sc.labels_)

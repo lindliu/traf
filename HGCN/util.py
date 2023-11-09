@@ -301,6 +301,7 @@ def load_dataset(dataset_dir, batch_size, valid_batch_size= None, test_batch_siz
     data['train_loader'] = DataLoader(cat_data['train_x'], cat_data['train_target'], batch_size)
     data['val_loader'] = DataLoader(cat_data['val_x'], cat_data['val_target'], valid_batch_size)
     data['test_loader'] = DataLoader(cat_data['test_x'], cat_data['test_target'], test_batch_size)
+    data['y_test'] = cat_data['test_target']
     #data['scaler'] = scaler
     return data
 

@@ -43,12 +43,12 @@ class ASTGCN_Recent(nn.Module):
         self.bn=BatchNorm2d(in_dim,affine=False)
         
     def forward(self,input):
-        x=self.bn(input)
+        x=self.bn(input) # B,c,N,T
         adj=self.supports[0]
         x,_,_ = self.block1(x,adj)
         x,d_adj,t_adj = self.block2(x,adj)
-        x = x.permute(0,3,2,1)
-        x = self.final_conv(x)#b,12,n,1
+        x = x.permute(0,3,2,1)# B,T,N,C
+        x = self.final_conv(x)#B,T,N,1(b,12,n,1)
         return x,d_adj,t_adj
     
 
