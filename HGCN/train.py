@@ -34,8 +34,8 @@ parser.add_argument('--save',type=str,default='./garage/PEMS08',help='save path'
 parser.add_argument('--expid',type=int,default=1,help='experiment id')
 # parser.add_argument('--model',type=str,default='gwnet',help='adj type')
 # parser.add_argument('--model',type=str,default='H_GCN_wh',help='adj type')
-# parser.add_argument('--model',type=str,default='H_GCN',help='adj type')
-parser.add_argument('--model',type=str,default='ASTGCN_Recent',help='adj type')
+parser.add_argument('--model',type=str,default='GRCN',help='adj type')
+# parser.add_argument('--model',type=str,default='ASTGCN_Recent',help='adj type')
 parser.add_argument('--decay', type=float, default=0.92, help='decay rate of learning rate ')
 
 args = parser.parse_args()
@@ -254,3 +254,4 @@ if __name__ == "__main__":
 # GWNET On average over 12 horizons,         Test MAE: 15.9980, Test MAPE: 0.1043, Test RMSE: 24.8106
 # H_GCN_wh On average over 12 horizons,      Test MAE: 17.6598, Test MAPE: 0.1151, Test RMSE: 26.6680
 # ASTGCN_Recent On average over 12 horizons, Test MAE: 19.3278, Test MAPE: 0.1270, Test RMSE: 28.6746
+# GRCN On average over 12 horizons,          Test MAE: 20.4614, Test MAPE: 0.1338, Test RMSE: 32.4759
