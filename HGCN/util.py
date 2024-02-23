@@ -232,8 +232,8 @@ def get_adjacency_matrix(distance_df_filename, num_of_vertices, id_filename=None
                     distaneA[i, j] = distance
             return A, distaneA
 
-def load_adj(pkl_filename, adjtype):
-    adj_ind, adj_mx = get_adjacency_matrix(pkl_filename, num_of_vertices=170)
+def load_adj(pkl_filename, adjtype, num_nodes=170):
+    adj_ind, adj_mx = get_adjacency_matrix(pkl_filename, num_of_vertices=num_nodes)
     if adjtype == "scalap":
         adj = [calculate_scaled_laplacian(adj_mx)]
     elif adjtype == "normlap":
@@ -288,7 +288,8 @@ def load_adj(pkl_filename, adjtype):
 #     return data
 
 def load_dataset(dataset_dir, batch_size, valid_batch_size= None, test_batch_size=None):
-    cat_data = np.load('../../data/traf_Datasets/PEMS08_r1_d0_w0_astcgn.npz')
+    # cat_data = np.load('../../data/traf_Datasets/PEMS08_r1_d0_w0_astcgn.npz')
+    cat_data = np.load(dataset_dir)
     
     data = {}
     # data['train_x'] = cat_data['train_x']

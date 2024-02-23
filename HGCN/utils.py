@@ -108,6 +108,183 @@ class cheby_conv_ds(nn.Module):
         return out  
 
     
+
+
+
+
+
+
+
+
+        
+##gwnet
+class nconv_(nn.Module):
+    def __init__(self):
+        super(nconv_,self).__init__()
+
+    def forward(self,x, A):
+        A=A.transpose(-1,-2)
+        x = torch.einsum('ncvl,vw->ncwl',(x,A))
+        return x.contiguous()
+
+class nconv_d(nn.Module):
+    def __init__(self):
+        super(nconv_d,self).__init__()
+
+    def forward(self,x, A):
+        A=A.transpose(-1,-2)
+        x = torch.einsum('ncvl,nvw->ncwl',(x,A))
+        return x.contiguous()
+    
+class linear_time_(nn.Module):
+    def __init__(self,c_in,c_out,Kt):
+        super(linear_time_,self).__init__()
+        self.mlp = torch.nn.Conv2d(c_in, c_out, kernel_size=(1, Kt), padding=(0,1), stride=(1,1), bias=True)
+    def forward(self,x):
+        return self.mlp(x)
+    
+class multi_gcn_time_d(nn.Module):
+    def __init__(self,c_in,c_out,Kt,dropout,support_len=3,order=2):
+        super(multi_gcn_time_d,self).__init__()
+        self.nconv = nconv_()
+        self.nconv_d = nconv_d()
+        
+        c_in = (order*support_len+1)*c_in
+        # self.mlp = linear_time_(c_in,c_out,Kt)
+        self.mlp = linear_time_(96,c_out,Kt)
+        self.dropout = dropout
+        self.order = order
+
+    def forward(self,x,support):
+        out = [x]
+        
+        # for a in support:
+        #     x1 = self.nconv(x,a)
+        #     out.append(x1)
+        #     for k in range(2, self.order + 1):
+        #         x2 = self.nconv(x1,a)
+        #         out.append(x2)
+        #         x1 = x2
+        
+        #### added ################
+        # for a in support[:-1]:
+            
+        #     x1 = self.nconv(x,a)
+        #     out.append(x1)
+        #     for k in range(2, self.order + 1):
+        #         x2 = self.nconv(x1,a)
+        #         out.append(x2)
+        #         x1 = x2
+        
+        a = support[-1]
+        x1 = self.nconv_d(x,a)
+        out.append(x1)
+        for k in range(2, self.order + 1):
+            x2 = self.nconv_d(x1,a)
+            out.append(x2)
+            x1 = x2
+        ############################
+        
+        # print('cin: ', out[0].shape,out[1].shape,out[2].shape)
+        
+        h = torch.cat(out,dim=1)
+        # print('h', h.shape)
+        h = self.mlp(h)
+        # print('h1', h.shape)
+        h = F.dropout(h, self.dropout, training=self.training)
+        return h
+    
+###ASTGCN_block
+class ST_BLOCK_0_dynamic(nn.Module):
+    def __init__(self,c_in,c_out,num_nodes,tem_size,K,Kt):
+        super(ST_BLOCK_0_dynamic,self).__init__()
+        
+        self.conv1=Conv2d(c_in, c_out, kernel_size=(1, 1),
+                          stride=(1,1), bias=True)
+        self.TATT=TATT(c_in,num_nodes,tem_size)
+        self.SATT=SATT(c_in,num_nodes,tem_size)
+        self.dynamic_gcn=cheby_conv_ds(c_in,c_out,K)
+        self.K=K
+        
+        self.time_conv=Conv2d(c_out, c_out, kernel_size=(1, Kt),padding=(0,1),
+                          stride=(1,1), bias=True)
+        #self.bn=BatchNorm2d(c_out)
+        self.bn=LayerNorm([c_out,num_nodes,tem_size])
+        
+        self.multigcn=multi_gcn_time_d(c_out,c_out,Kt,dropout=.3,support_len=3,order=2)
+
+    def forward(self,x,supports):
+        
+        ########################
+        x_input=self.conv1(x) #b,c,n,t
+        T_coef=self.TATT(x) # b,t,t
+        T_coef=T_coef.transpose(-1,-2)
+        x_TAt=torch.einsum('bcnl,blq->bcnq',x,T_coef)
+        S_coef=self.SATT(x)#B x N x N
+        ########################
+        
+        
+        spatial_gcn=self.dynamic_gcn(x_TAt,supports[0]+supports[1],S_coef)
+        
+        ### added ##############
+        spatial_gcn = self.multigcn(spatial_gcn, supports)
+        ########################
+        
+        spatial_gcn=torch.relu(spatial_gcn) #b,c,n,t
+        time_conv_output=self.time_conv(spatial_gcn)
+        out=self.bn(torch.relu(time_conv_output+x_input))
+        
+        return  out,S_coef,T_coef    
+     
+        
+     
+        
+##gwnet
+class nconv_(nn.Module):
+    def __init__(self):
+        super(nconv_,self).__init__()
+
+    def forward(self,x, A):
+        A=A.transpose(-1,-2)
+        x = torch.einsum('ncvl,vw->ncwl',(x,A))
+        return x.contiguous()
+    
+class linear_time_(nn.Module):
+    def __init__(self,c_in,c_out,Kt):
+        super(linear_time_,self).__init__()
+        self.mlp = torch.nn.Conv2d(c_in, c_out, kernel_size=(1, Kt), padding=(0,1), stride=(1,1), bias=True)
+    def forward(self,x):
+        return self.mlp(x)
+    
+class multi_gcn_time_(nn.Module):
+    def __init__(self,c_in,c_out,Kt,dropout,support_len=3,order=2):
+        super(multi_gcn_time_,self).__init__()
+        self.nconv = nconv_()
+        c_in = (order*support_len+1)*c_in
+        self.mlp = linear_time_(c_in,c_out,Kt)
+        self.dropout = dropout
+        self.order = order
+
+    def forward(self,x,support):
+        out = [x]
+        for a in support:
+            
+            x1 = self.nconv(x,a)
+            out.append(x1)
+            for k in range(2, self.order + 1):
+                x2 = self.nconv(x1,a)
+                out.append(x2)
+                x1 = x2
+                
+        # print('cin: ', out[0].shape,out[1].shape,out[2].shape)
+        
+        h = torch.cat(out,dim=1)
+        # print('h', h.shape)
+        h = self.mlp(h)
+        # print('h1', h.shape)
+        h = F.dropout(h, self.dropout, training=self.training)
+        return h
+    
 ###ASTGCN_block
 class ST_BLOCK_0(nn.Module):
     def __init__(self,c_in,c_out,num_nodes,tem_size,K,Kt):
@@ -125,14 +302,26 @@ class ST_BLOCK_0(nn.Module):
         #self.bn=BatchNorm2d(c_out)
         self.bn=LayerNorm([c_out,num_nodes,tem_size])
         
+        self.multigcn=multi_gcn_time_(c_out,c_out,Kt,dropout=.3,support_len=3,order=2)
+
     def forward(self,x,supports):
+        
+        ########################
         x_input=self.conv1(x) #b,c,n,t
         T_coef=self.TATT(x) # b,t,t
         T_coef=T_coef.transpose(-1,-2)
         x_TAt=torch.einsum('bcnl,blq->bcnq',x,T_coef)
         S_coef=self.SATT(x)#B x N x N
+        ########################
         
-        spatial_gcn=self.dynamic_gcn(x_TAt,supports,S_coef)
+        
+        spatial_gcn=self.dynamic_gcn(x_TAt,supports[0],S_coef)
+        
+        # # supports = [supports[-1]]  ## support_len=len(supports)
+        # ### added ##############
+        # spatial_gcn = self.multigcn(spatial_gcn, supports)
+        # ########################
+        
         spatial_gcn=torch.relu(spatial_gcn) #b,c,n,t
         time_conv_output=self.time_conv(spatial_gcn)
         out=self.bn(torch.relu(time_conv_output+x_input))

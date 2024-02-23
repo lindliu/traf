@@ -8,6 +8,7 @@ import sys
 import numpy as np
 from torch.nn import BatchNorm2d, Conv1d, Conv2d, ModuleList, Parameter,LayerNorm,InstanceNorm2d
 
+from utils import ST_BLOCK_0_dynamic
 from utils import ST_BLOCK_0 #ASTGCN
 from utils import ST_BLOCK_1 #DGCN_Mask/DGCN_Res
 from utils import ST_BLOCK_2_r #DGCN_recent
@@ -30,6 +31,73 @@ the parameters:
 x-> [batch_num,in_channels,num_nodes,tem_size],
 """
 
+
+
+class ASTGCN_Recent_dynamic(nn.Module):
+    def __init__(self,device, num_nodes, dropout=0.3, supports=None,length=12, 
+                 in_dim=1,out_dim=12,residual_channels=32,dilation_channels=32,
+                 skip_channels=256,end_channels=512,kernel_size=2,K=3,Kt=3):
+        super(ASTGCN_Recent_dynamic,self).__init__()
+        self.block1=ST_BLOCK_0_dynamic(in_dim,dilation_channels,num_nodes,length,K,Kt)
+        self.block2=ST_BLOCK_0_dynamic(dilation_channels,dilation_channels,num_nodes,length,K,Kt)
+        
+        ### added ####
+        self.block3=ST_BLOCK_0_dynamic(dilation_channels,dilation_channels,num_nodes,length,K,Kt)
+        ##############
+        
+        self.final_conv=Conv2d(length,12,kernel_size=(1, dilation_channels),padding=(0,0),
+                          stride=(1,1), bias=True)
+        self.supports=supports
+        self.bn=BatchNorm2d(in_dim,affine=False)
+        
+        
+        self.mlp1 = nn.Linear(2,10)
+        self.mlp1_ = nn.Linear(length, num_nodes)
+        
+        self.mlp2 = nn.Linear(2,10)
+        self.mlp2_ = nn.Linear(length, num_nodes)
+        
+        
+    def forward(self,input):
+        
+        #### added ####
+        nodevec1 = self.mlp1(input[:,[0,1],0,:].transpose(2,1)).transpose(2,1)
+        nodevec1 = self.mlp1_(nodevec1)
+
+        nodevec2 = self.mlp2(input[:,[0,1],0,:].transpose(2,1)).transpose(2,1)
+        nodevec2 = self.mlp2_(nodevec2).transpose(2,1)
+        
+        A=F.relu(torch.matmul(nodevec2, nodevec1))
+        d=1/(torch.sum(A,-1))
+        D=torch.diag_embed(d)
+        A=torch.matmul(D,A)
+        
+        # A = A.transpose(2,1)
+        
+        # mask = (self.supports[0]+self.supports[1])>1e-3
+        # supports = self.supports + [A*mask]
+        # np.save('mask.npy', mask.detach().cpu())
+        
+        supports = self.supports + [A]
+        ###############
+        
+        np.save('A.npy', A.detach().cpu())
+        
+        
+        x=self.bn(input) # B,c,N,T
+        x,_,_ = self.block1(x,supports)
+        x,d_adj,t_adj = self.block2(x,supports)
+        
+        # ### added ###########
+        # skip,d_adj,t_adj = self.block3(x,supports)
+        # x = x+skip
+        # #####################
+        
+        x = x.permute(0,3,2,1)# B,T,N,C
+        x = self.final_conv(x)#B,T,N,1(b,12,n,1)
+        return x,d_adj,t_adj
+    
+    
 class ASTGCN_Recent(nn.Module):
     def __init__(self,device, num_nodes, dropout=0.3, supports=None,length=12, 
                  in_dim=1,out_dim=12,residual_channels=32,dilation_channels=32,
@@ -37,19 +105,46 @@ class ASTGCN_Recent(nn.Module):
         super(ASTGCN_Recent,self).__init__()
         self.block1=ST_BLOCK_0(in_dim,dilation_channels,num_nodes,length,K,Kt)
         self.block2=ST_BLOCK_0(dilation_channels,dilation_channels,num_nodes,length,K,Kt)
+        
+        ### added ####
+        self.block3=ST_BLOCK_0_dynamic(dilation_channels,dilation_channels,num_nodes,length,K,Kt)
+        ##############
+        
         self.final_conv=Conv2d(length,12,kernel_size=(1, dilation_channels),padding=(0,0),
                           stride=(1,1), bias=True)
         self.supports=supports
         self.bn=BatchNorm2d(in_dim,affine=False)
         
+        
+        self.nodevec1 = nn.Parameter(torch.randn(num_nodes, 10).to(device), requires_grad=True).to(device)
+        self.nodevec2 = nn.Parameter(torch.randn(10, num_nodes).to(device), requires_grad=True).to(device)   
+        
+        
     def forward(self,input):
+        
+        #### added ####
+        A=F.relu(torch.mm(self.nodevec1, self.nodevec2))
+        d=1/(torch.sum(A,-1))
+        D=torch.diag_embed(d)
+        A=torch.matmul(D,A)
+        
+        supports = self.supports + [A]
+        ###############
+        
         x=self.bn(input) # B,c,N,T
-        adj=self.supports[0]
-        x,_,_ = self.block1(x,adj)
-        x,d_adj,t_adj = self.block2(x,adj)
+        x,_,_ = self.block1(x,supports)
+        x,d_adj,t_adj = self.block2(x,supports)
+        
+        # ### added ###########
+        # skip,d_adj,t_adj = self.block3(x,supports)
+        # x = x+skip
+        # #####################
+        
         x = x.permute(0,3,2,1)# B,T,N,C
         x = self.final_conv(x)#B,T,N,1(b,12,n,1)
         return x,d_adj,t_adj
+    
+    
     
 
     
