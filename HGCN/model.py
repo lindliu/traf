@@ -57,6 +57,7 @@ class ASTGCN_Recent_dynamic(nn.Module):
         self.mlp2 = nn.Linear(2,10)
         self.mlp2_ = nn.Linear(length, num_nodes)
         
+        self.weight = nn.Parameter(torch.rand(1).to(device), requires_grad=True).to(device)
         
     def forward(self,input):
         
@@ -68,20 +69,22 @@ class ASTGCN_Recent_dynamic(nn.Module):
         nodevec2 = self.mlp2_(nodevec2).transpose(2,1)
         
         A=F.relu(torch.matmul(nodevec2, nodevec1))
-        d=1/(torch.sum(A,-1))
+        d=1/(torch.sum(A,-1)+.0001)
         D=torch.diag_embed(d)
         A=torch.matmul(D,A)
         
         # A = A.transpose(2,1)
+        A = (1-self.weight)*A + self.weight*A.transpose(2,1)
         
         # mask = (self.supports[0]+self.supports[1])>1e-3
-        # supports = self.supports + [A*mask]
         # np.save('mask.npy', mask.detach().cpu())
+        # supports = self.supports + [A*mask]
         
         supports = self.supports + [A]
-        ###############
         
         np.save('A.npy', A.detach().cpu())
+        ###############
+        
         
         
         x=self.bn(input) # B,c,N,T
@@ -433,7 +436,55 @@ class gwnet(nn.Module):
         self.receptive_field = receptive_field
         self.bn_1=BatchNorm2d(in_dim,affine=False)
 
-    def forward(self, input):
+
+
+
+
+
+        self.mlp1 = nn.Linear(2,10)
+        self.mlp1_ = nn.Linear(length, num_nodes)
+        
+        self.mlp2 = nn.Linear(2,10)
+        self.mlp2_ = nn.Linear(length, num_nodes)
+        
+        self.weight = nn.Parameter(torch.rand(1).to(device), requires_grad=True).to(device)
+        
+    def forward(self,input):
+        
+        #### added ####
+        nodevec1 = self.mlp1(input[:,[0,1],0,:].transpose(2,1)).transpose(2,1)
+        nodevec1 = self.mlp1_(nodevec1)
+
+        nodevec2 = self.mlp2(input[:,[0,1],0,:].transpose(2,1)).transpose(2,1)
+        nodevec2 = self.mlp2_(nodevec2).transpose(2,1)
+        
+        A=F.relu(torch.matmul(nodevec2, nodevec1))
+        d=1/(torch.sum(A,-1)+.0001)
+        D=torch.diag_embed(d)
+        A=torch.matmul(D,A)
+        
+        # A = A.transpose(2,1)
+        adp = (1-self.weight)*A + self.weight*A.transpose(2,1)
+        
+        # mask = (self.supports[0]+self.supports[1])>1e-3
+        # np.save('mask.npy', mask.detach().cpu())
+        # supports = self.supports + [A*mask]
+        
+        new_supports = self.supports + [adp]
+        
+        np.save('A.npy', A.detach().cpu())
+        ###############
+        
+        
+        
+        # # calculate the current adaptive adj matrix once per iteration
+        # new_supports = None
+        # if self.supports is not None:
+        #     adp = F.softmax(F.relu(torch.mm(self.nodevec1, self.nodevec2)), dim=1)
+        #     new_supports = self.supports + [adp]
+
+
+        
         input=self.bn_1(input)
         in_len = input.size(3)
         if in_len<self.receptive_field:
@@ -442,12 +493,6 @@ class gwnet(nn.Module):
             x = input
         x = self.start_conv(x)
         skip = 0
-
-        # calculate the current adaptive adj matrix once per iteration
-        new_supports = None
-        if self.supports is not None:
-            adp = F.softmax(F.relu(torch.mm(self.nodevec1, self.nodevec2)), dim=1)
-            new_supports = self.supports + [adp]
 
         # WaveNet layers
         for i in range(self.blocks * self.layers):
@@ -548,6 +593,16 @@ class H_GCN_wh(nn.Module):
         
         self.bn=BatchNorm2d(in_dim,affine=False)
         
+        
+        
+        
+        self.mlp1 = nn.Linear(2,10)
+        self.mlp1_ = nn.Linear(length, num_nodes)
+        
+        self.mlp2 = nn.Linear(2,10)
+        self.mlp2_ = nn.Linear(length, num_nodes)
+        
+        self.weight = nn.Parameter(torch.rand(1).to(device), requires_grad=True).to(device)
 
     def forward(self, input):
         x=self.bn(input)
@@ -562,6 +617,33 @@ class H_GCN_wh(nn.Module):
             A=torch.matmul(D,A)
             
             new_supports = self.supports + [A]
+            
+            
+            # #### added ####
+            # nodevec1 = self.mlp1(input[:,[0,1],0,:].transpose(2,1)).transpose(2,1)
+            # nodevec1 = self.mlp1_(nodevec1)
+
+            # nodevec2 = self.mlp2(input[:,[0,1],0,:].transpose(2,1)).transpose(2,1)
+            # nodevec2 = self.mlp2_(nodevec2).transpose(2,1)
+            
+            # A=F.relu(torch.matmul(nodevec2, nodevec1))
+            # d=1/(torch.sum(A,-1))
+            # D=torch.diag_embed(d)
+            # A=torch.matmul(D,A)
+            
+            # # A = A.transpose(2,1)
+            # A = (1-self.weight)*A + self.weight*A.transpose(2,1)
+            
+            # # mask = (self.supports[0]+self.supports[1])>1e-3
+            # # np.save('mask.npy', mask.detach().cpu())
+            # # supports = self.supports + [A*mask]
+            
+            # new_supports = self.supports + [A]
+            
+            # np.save('A.npy', A.detach().cpu())
+            # ###############
+
+            
             
             
         skip=0

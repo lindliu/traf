@@ -129,6 +129,16 @@ def read_and_generate_dataset(graph_signal_matrix_filename,
     '''
     data_seq = np.load(graph_signal_matrix_filename)['data']  # (sequence_length, num_of_vertices, num_of_features)  features: total flow, average speed, and average occupancy
     
+    ### added ###
+    hour = np.repeat(np.linspace(0,.5,12*24).reshape([-1,1]),62, axis=1).flatten(order='F')
+    hour = np.repeat(hour.reshape([-1,1]),170,axis=1).reshape([17856,170,1])
+    week = np.repeat(np.linspace(0,.5,7).reshape([1,-1]),12*24,axis=0).flatten(order='F')
+    week = np.repeat(week.reshape([-1,1]),9,axis=1).flatten(order='F')[:17856]
+    week = np.repeat(week.reshape([-1,1]),170,axis=1).reshape([17856,170,1])
+    
+    data_seq = np.concatenate([hour,week,data_seq], axis=2)
+    #############
+    
     all_samples = []
     for idx in range(data_seq.shape[0]):
         sample = get_sample_indices(data_seq, num_of_weeks, num_of_days,
@@ -153,7 +163,12 @@ def read_and_generate_dataset(graph_signal_matrix_filename,
             hour_sample = np.expand_dims(hour_sample, axis=0).transpose((0, 2, 3, 1))  # (1,N,F,T)
             sample.append(hour_sample)
 
-        target = np.expand_dims(target, axis=0).transpose((0, 2, 3, 1))[:, :, 0, :]  # (1,N,T)
+        # target = np.expand_dims(target, axis=0).transpose((0, 2, 3, 1))[:, :, 0, :]  # (1,N,T)
+        
+        ### added ###
+        target = np.expand_dims(target, axis=0).transpose((0, 2, 3, 1))[:, :, 2, :]  # (1,N,T)
+        #############
+        
         sample.append(target)
 
         time_sample = np.expand_dims(np.array([idx]), axis=0)  # (1,1)
@@ -186,6 +201,10 @@ def read_and_generate_dataset(graph_signal_matrix_filename,
 
     (stats, train_x_norm, val_x_norm, test_x_norm) = normalization(train_x, val_x, test_x)
 
+    ### added ###
+    train_x_norm[:,:,[0,1],:], val_x_norm[:,:,[0,1],:], test_x_norm[:,:,[0,1],:] = train_x[:,:,[0,1],:], val_x[:,:,[0,1],:], test_x[:,:,[0,1],:]
+    #############
+    
     all_data = {
         'train': {
             'x': train_x_norm,

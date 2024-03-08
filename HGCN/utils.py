@@ -150,8 +150,8 @@ class multi_gcn_time_d(nn.Module):
         self.nconv_d = nconv_d()
         
         c_in = (order*support_len+1)*c_in
-        # self.mlp = linear_time_(c_in,c_out,Kt)
-        self.mlp = linear_time_(96,c_out,Kt)
+        self.mlp = linear_time_(c_in,c_out,Kt)
+        # self.mlp = linear_time_(96,c_out,Kt)
         self.dropout = dropout
         self.order = order
 
@@ -167,14 +167,14 @@ class multi_gcn_time_d(nn.Module):
         #         x1 = x2
         
         #### added ################
-        # for a in support[:-1]:
+        for a in support[:-1]:
             
-        #     x1 = self.nconv(x,a)
-        #     out.append(x1)
-        #     for k in range(2, self.order + 1):
-        #         x2 = self.nconv(x1,a)
-        #         out.append(x2)
-        #         x1 = x2
+            x1 = self.nconv(x,a)
+            out.append(x1)
+            for k in range(2, self.order + 1):
+                x2 = self.nconv(x1,a)
+                out.append(x2)
+                x1 = x2
         
         a = support[-1]
         x1 = self.nconv_d(x,a)
@@ -186,7 +186,7 @@ class multi_gcn_time_d(nn.Module):
         ############################
         
         # print('cin: ', out[0].shape,out[1].shape,out[2].shape)
-        
+
         h = torch.cat(out,dim=1)
         # print('h', h.shape)
         h = self.mlp(h)
@@ -211,7 +211,8 @@ class ST_BLOCK_0_dynamic(nn.Module):
         #self.bn=BatchNorm2d(c_out)
         self.bn=LayerNorm([c_out,num_nodes,tem_size])
         
-        self.multigcn=multi_gcn_time_d(c_out,c_out,Kt,dropout=.3,support_len=3,order=2)
+        # self.multigcn=multi_gcn_time_d(c_out,c_out,Kt,dropout=.3,support_len=3,order=2)
+        self.multigcn=multi_gcn_time_d(c_in,c_out,Kt,dropout=.3,support_len=3,order=2)
 
     def forward(self,x,supports):
         
@@ -224,11 +225,19 @@ class ST_BLOCK_0_dynamic(nn.Module):
         ########################
         
         
-        spatial_gcn=self.dynamic_gcn(x_TAt,supports[0]+supports[1],S_coef)
+        # ### added ##############
+        # spatial_gcn=self.dynamic_gcn(x_TAt,supports[0]+supports[1],S_coef)
+        # spatial_gcn = self.multigcn(spatial_gcn, supports)
+        # ########################
         
         ### added ##############
-        spatial_gcn = self.multigcn(spatial_gcn, supports)
+        supports[-1] = torch.matmul(supports[-1], S_coef)
+        spatial_gcn = self.multigcn(x_TAt, supports)
         ########################
+        
+        # ### added ##############
+        # spatial_gcn=self.dynamic_gcn(x_TAt,supports[-1],S_coef)
+        # ########################
         
         spatial_gcn=torch.relu(spatial_gcn) #b,c,n,t
         time_conv_output=self.time_conv(spatial_gcn)
@@ -842,6 +851,8 @@ class multi_gcn(nn.Module):
     def __init__(self,c_in,c_out,dropout,support_len=3,order=2):
         super(multi_gcn,self).__init__()
         self.nconv = nconv()
+        self.nconv_d = nconv_d()
+        
         c_in = (order*support_len+1)*c_in
         self.mlp = linear(c_in,c_out)
         self.dropout = dropout
@@ -849,14 +860,35 @@ class multi_gcn(nn.Module):
 
     def forward(self,x,support):
         out = [x]
-        for a in support:
+        
+        # for a in support:
+        #     x1 = self.nconv(x,a)
+        #     out.append(x1)
+        #     for k in range(2, self.order + 1):
+        #         x2 = self.nconv(x1,a)
+        #         out.append(x2)
+        #         x1 = x2
+
+
+        #### added #######
+        for a in support[:-1]:
             x1 = self.nconv(x,a)
             out.append(x1)
             for k in range(2, self.order + 1):
                 x2 = self.nconv(x1,a)
                 out.append(x2)
                 x1 = x2
-
+        
+        a = support[-1]
+        x1 = self.nconv_d(x,a)
+        out.append(x1)
+        for k in range(2, self.order + 1):
+            x2 = self.nconv_d(x1,a)
+            out.append(x2)
+            x1 = x2
+        #######################
+        
+                
         h = torch.cat(out,dim=1)
         h = self.mlp(h)
         h = F.dropout(h, self.dropout, training=self.training)
@@ -866,7 +898,7 @@ class multi_gcn(nn.Module):
 
 ##cluster    
 
-    
+
 class nconv_batch(nn.Module):
     def __init__(self):
         super(nconv_batch,self).__init__()
@@ -893,11 +925,15 @@ class multi_gcn_time(nn.Module):
         self.nconv = nconv()
         c_in = (order*support_len+1)*c_in
         self.mlp = linear_time(c_in,c_out,Kt)
+        # self.mlp = linear_time(96,c_out,Kt)
         self.dropout = dropout
         self.order = order
-
+        
+        self.nconv_ = nconv_batch()
+        
     def forward(self,x,support):
         out = [x]
+        
         for a in support:
             x1 = self.nconv(x,a)
             out.append(x1)
@@ -906,6 +942,26 @@ class multi_gcn_time(nn.Module):
                 out.append(x2)
                 x1 = x2
 
+
+        # ### added ####
+        # for a in support[:-1]:
+        #     x1 = self.nconv(x,a)
+        #     out.append(x1)
+        #     for k in range(2, self.order + 1):
+        #         x2 = self.nconv(x1,a)
+        #         out.append(x2)
+        #         x1 = x2
+        
+        # a = support[-1]
+        # x1 = self.nconv_(x,a)
+        # out.append(x1)
+        # for k in range(2, self.order + 1):
+        #     x2 = self.nconv_(x1,a)
+        #     out.append(x2)
+        #     x1 = x2
+        # ###############
+        
+        
         h = torch.cat(out,dim=1)
         h = self.mlp(h)
         h = F.dropout(h, self.dropout, training=self.training)

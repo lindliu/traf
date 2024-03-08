@@ -11,27 +11,24 @@ import random
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--device',type=str,default='cuda:0',help='')
-# parser.add_argument('--data',type=str,default='../../data/traf_Datasets/PEMS08_r1_d0_w0_astcgn.npz',help='data path')
-# parser.add_argument('--adjdata',type=str,default='../../data/traf_Datasets/PEMS08/PEMS08.csv',help='adj data path')
-# parser.add_argument('--data',type=str,default='../../data/traf_Datasets/Gothenburg/may2020_r1_d0_w0_astcgn.npz',help='data path')
-# parser.add_argument('--adjdata',type=str,default='../../data/traf_Datasets/Gothenburg/tofromcost.csv',help='adj data path')
-# parser.add_argument('--data',type=str,default='../../data/traf_Datasets/Gothenburg/may2020_tmp_astcgn.npz',help='data path')
-# parser.add_argument('--adjdata',type=str,default='../../data/traf_Datasets/Gothenburg/tofromcost.csv',help='adj data path')
-parser.add_argument('--data',type=str,default='../../data/traf_Datasets/Gothenburg/All2020_w_astcgn.npz',help='data path')
-parser.add_argument('--adjdata',type=str,default='../../data/traf_Datasets/Gothenburg/tofromcost.csv',help='adj data path')
 
+### PEMS08
+parser.add_argument('--data',type=str,default='../../data/traf_Datasets/PEMS08_r1_d0_w0_astcgn.npz',help='data path')
+parser.add_argument('--adjdata',type=str,default='../../data/traf_Datasets/PEMS08/PEMS08.csv',help='adj data path')
+parser.add_argument('--in_dim',type=int,default=5,help='inputs dimension')  ## PEMS08
+parser.add_argument('--num_nodes',type=int,default=170,help='number of nodes')  ## PEMS08
+parser.add_argument('--save',type=str,default='./garage/PEMS08',help='save path')
 
+### Gothenburg
+# parser.add_argument('--data',type=str,default='../../data/traf_Datasets/Gothenburg/All2020_w_astcgn.npz',help='data path')
+# parser.add_argument('--adjdata',type=str,default='../../data/traf_Datasets/Gothenburg/tofromcost.csv',help='adj data path')
+# parser.add_argument('--in_dim',type=int,default=5,help='inputs dimension')  ## Gothenburg
+# parser.add_argument('--num_nodes',type=int,default=61,help='number of nodes')  ## Gothenburg
+# parser.add_argument('--save',type=str,default='./garage/Gothenburg',help='save path')
 
 parser.add_argument('--adjtype',type=str,default='doubletransition',help='adj type')
 parser.add_argument('--seq_length',type=int,default=12,help='')
 parser.add_argument('--nhid',type=int,default=32,help='')
-
-# parser.add_argument('--in_dim',type=int,default=3,help='inputs dimension')  ## PEMS08
-# parser.add_argument('--num_nodes',type=int,default=170,help='number of nodes')  ## PEMS08
-
-parser.add_argument('--in_dim',type=int,default=9,help='inputs dimension')  ## Gothenburg
-parser.add_argument('--num_nodes',type=int,default=61,help='number of nodes')  ## Gothenburg
-
 parser.add_argument('--batch_size',type=int,default=64,help='batch size')
 parser.add_argument('--learning_rate',type=float,default=0.001,help='learning rate')
 parser.add_argument('--dropout',type=float,default=0.3,help='dropout rate')
@@ -39,20 +36,17 @@ parser.add_argument('--weight_decay',type=float,default=0.0001,help='weight deca
 parser.add_argument('--epochs',type=int,default=50,help='')
 parser.add_argument('--print_every',type=int,default=50,help='')
 parser.add_argument('--force', type=str, default=False,help="remove params dir", required=False)
-
-# parser.add_argument('--save',type=str,default='./garage/PEMS08',help='save path')
-parser.add_argument('--save',type=str,default='./garage/Gothenburg',help='save path')
-
 parser.add_argument('--expid',type=int,default=1,help='experiment id')
+parser.add_argument('--decay', type=float, default=0.92, help='decay rate of learning rate ')
+
+### choose model
 # parser.add_argument('--model',type=str,default='gwnet',help='adj type')
 # parser.add_argument('--model',type=str,default='H_GCN_wh',help='adj type')
 # parser.add_argument('--model',type=str,default='GRCN',help='adj type')
-# parser.add_argument('--model',type=str,default='ASTGCN_Recent',help='adj type')
-parser.add_argument('--model',type=str,default='ASTGCN_Recent_dynamic',help='adj type')
+parser.add_argument('--model',type=str,default='ASTGCN_Recent',help='adj type')
+# parser.add_argument('--model',type=str,default='ASTGCN_Recent_dynamic',help='adj type')
 
 
-
-parser.add_argument('--decay', type=float, default=0.92, help='decay rate of learning rate ')
 
 args = parser.parse_args()
 ##model repertition
@@ -482,77 +476,33 @@ if __name__ == "__main__":
 
 
 ## PESM08
-# GWNET On average over 12 horizons,         Test MAE: 15.9980, Test MAPE: 0.1043, Test RMSE: 24.8106
-# H_GCN_wh On average over 12 horizons,      Test MAE: 17.6598, Test MAPE: 0.1151, Test RMSE: 26.6680
+# GWNET On average over 12 horizons,         Test MAE: 15.7294, Test MAPE: 0.1003, Test RMSE: 24.7152
+                                           # Test MAE: 16.3582, Test MAPE: 0.1072, Test RMSE: 25.1460
+# H_GCN_wh On average over 12 horizons,      Test MAE: 17.2224, Test MAPE: 0.1173, Test RMSE: 26.3425
+                                           # Test MAE: 17.8640, Test MAPE: 0.1162, Test RMSE: 27.4595
+# ASTGCN_Recent On average over 12 horizons, Test MAE: 19.3815, Test MAPE: 0.1284, Test RMSE: 29.0444
+                                           # Test MAE: 17.1699, Test MAPE: 0.1166, Test RMSE: 26.1573
 # GRCN On average over 12 horizons,          Test MAE: 20.4614, Test MAPE: 0.1338, Test RMSE: 32.4759
-# ASTGCN_Recent On average over 12 horizons, Test MAE: 19.3278, Test MAPE: 0.1270, Test RMSE: 28.6746
-# manually ASTGCN_Recent                     Test MAE: 18.4112, Test MAPE: 0.1183, Test RMSE: 27.7396
-#                                            Test MAE: 18.0831, Test MAPE: 0.1138, Test RMSE: 27.4911
-
-
-## Gothenburg
-# GWNET On average over 12 horizons,         Test MAE: 0.0147, Test MAPE: 1.9483, Test RMSE: 0.0272
-# H_GCN_wh On average over 12 horizons,      Test MAE: 0.0145, Test MAPE: 1.6690, Test RMSE: 0.0274
-# GRCN On average over 12 horizons,          Test MAE: 0.0146, Test MAPE: 1.8420, Test RMSE: 0.0274
-# ASTGCN_Recent On average over 12 horizons, Test MAE: 0.0147, Test MAPE: 1.8713, Test RMSE: 0.0275
-# manually ASTGCN_Recent                     Test MAE: 0.0150, Test MAPE: 2.0430, Test RMSE: 0.0276
-
-
-## Gothenburg 3days
-# GWNET On average over 12 horizons,         Test MAE: 0.0160, Test MAPE: 1.8043, Test RMSE: 0.0289
-# H_GCN_wh On average over 12 horizons,      Test MAE: 0.0158, Test MAPE: 1.6863, Test RMSE: 0.0286
-# GRCN On average over 12 horizons,          Test MAE: 0.0158, Test MAPE: 1.7637, Test RMSE: 0.0287
-# ASTGCN_Recent On average over 12 horizons, Test MAE: 0.0160, Test MAPE: 1.6813, Test RMSE: 0.0291
-# manually ASTGCN_Recent                     Test MAE: 0.0164, Test MAPE: 1.7966, Test RMSE: 0.0294
-
-
-
-
-
-
-## Gothenburg(all) 3 days time embedding
-# GWNET On average over 12 horizons,         Test MAE: 0.0110, Test MAPE: 1.5709, Test RMSE: 0.0189
-# H_GCN_wh On average over 12 horizons,      Test MAE: 0.0108, Test MAPE: 1.4204, Test RMSE: 0.0184
-# GRCN On average over 12 horizons,          Test MAE: 0.0108, Test MAPE: 1.3490, Test RMSE: 0.0189
-# ASTGCN_Recent On average over 12 horizons, 
-# manually ASTGCN_Recent                     Test MAE: 0.0110, Test MAPE: 1.4115, Test RMSE: 0.0188
-
-## Gothenburg(all) 7 days time embedding
-# GWNET On average over 12 horizons,         Test MAE: 0.0112, Test MAPE: 1.4066, Test RMSE: 0.0195
-# H_GCN_wh On average over 12 horizons,      Test MAE: 0.0111, Test MAPE: 1.2145, Test RMSE: 0.0195
-# GRCN On average over 12 horizons,          Test MAE: 0.0112, Test MAPE: 1.3512, Test RMSE: 0.0196
-# ASTGCN_Recent On average over 12 horizons, 
-# manually ASTGCN_Recent                     Test MAE: 0.0116, Test MAPE: 1.6089, Test RMSE: 0.0198
-
-## Gothenburg(all) 14 days time embedding
-# GWNET On average over 12 horizons,         Test MAE: 0.0127, Test MAPE: 1.1792, Test RMSE: 0.0215
-# H_GCN_wh On average over 12 horizons,      Test MAE: 0.0127, Test MAPE: 0.9991, Test RMSE: 0.0219
-# GRCN On average over 12 horizons,          Test MAE: 0.0129, Test MAPE: 1.1958, Test RMSE: 0.0221
-# ASTGCN_Recent On average over 12 horizons, 
-# manually ASTGCN_Recent                     Test MAE: 0.0141, Test MAPE: 1.1007, Test RMSE: 0.0236
-
-
 
 
 ## Gothenburg(all) 3 days
-# GWNET On average over 12 horizons,         Test MAE: 0.0111, Test MAPE: 1.6155, Test RMSE: 0.0188
-# H_GCN_wh On average over 12 horizons,      Test MAE: 0.0109, Test MAPE: 1.5206, Test RMSE: 0.0188
-# GRCN On average over 12 horizons,          Test MAE: 0.0110, Test MAPE: 1.5236, Test RMSE: 0.0190
-# ASTGCN_Recent On average over 12 horizons, Test MAE: 0.0112, Test MAPE: 1.7162, Test RMSE: 0.0189
-# manually ASTGCN_Recent                     Test MAE: 0.0114, Test MAPE: 1.7963, Test RMSE: 0.0191
+# GWNET On average over 12 horizons,         Test MAE: 0.0105, Test MAPE: 1.5644, Test RMSE: 0.0185
+                                           # Test MAE: 0.0101, Test MAPE: 1.2198, Test RMSE: 0.0183
+# H_GCN_wh On average over 12 horizons,      Test MAE: 0.0103, Test MAPE: 1.4281, Test RMSE: 0.0184
+                                           # Test MAE: 0.0103, Test MAPE: 1.3377, Test RMSE: 0.0183
+# ASTGCN_Recent On average over 12 horizons, Test MAE: 0.0104, Test MAPE: 1.4032, Test RMSE: 0.0181
+                                           # Test MAE: 0.0103, Test MAPE: 1.1076, Test RMSE: 0.0185
+# GRCN On average over 12 horizons,          Test MAE: 0.0103, Test MAPE: 1.3163, Test RMSE: 0.0187
+
 
 
 ## Gothenburg(all) 7 days
-# GWNET On average over 12 horizons,         Test MAE: 0.0113, Test MAPE: 1.3113, Test RMSE: 0.0193
-# H_GCN_wh On average over 12 horizons,      Test MAE: 0.0111, Test MAPE: 1.1028, Test RMSE: 0.0197
-# GRCN On average over 12 horizons,          Test MAE: 0.0117, Test MAPE: 1.5773, Test RMSE: 0.0196
-# ASTGCN_Recent On average over 12 horizons, Test MAE: 0.0113, Test MAPE: 1.3629, Test RMSE: 0.0201
-# manually ASTGCN_Recent                     Test MAE: 0.0119, Test MAPE: 1.4377, Test RMSE: 0.0202
+# GWNET On average over 12 horizons,         Test MAE: 0.0107, Test MAPE: 1.1853, Test RMSE: 0.0193
+                                           # Test MAE: 0.0105, Test MAPE: 1.1327, Test RMSE: 0.0191
+# H_GCN_wh On average over 12 horizons,      Test MAE: 0.0106, Test MAPE: 1.1122, Test RMSE: 0.0192
+                                           # Test MAE: 0.0106, Test MAPE: 1.0636, Test RMSE: 0.0193
+# ASTGCN_Recent On average over 12 horizons, Test MAE: 0.0111, Test MAPE: 1.2440, Test RMSE: 0.0201
+                                           # Test MAE: 0.0112, Test MAPE: 1.0966, Test RMSE: 0.0210
+# GRCN On average over 12 horizons,          Test MAE: 0.0107, Test MAPE: 1.1874, Test RMSE: 0.0196
 
 
-## Gothenburg(all) 14 days
-# GWNET On average over 12 horizons,         Test MAE: 0.0127, Test MAPE: 1.0773, Test RMSE: 0.0218
-# H_GCN_wh On average over 12 horizons,      Test MAE: 0.0127, Test MAPE: 0.9926, Test RMSE: 0.0219
-# GRCN On average over 12 horizons,          Test MAE: 0.0131, Test MAPE: 1.3982, Test RMSE: 0.0220
-# ASTGCN_Recent On average over 12 horizons, Test MAE: 0.0132, Test MAPE: 0.9692, Test RMSE: 0.0225
-# manually ASTGCN_Recent                     Test MAE: 0.0141, Test MAPE: 1.2115, Test RMSE: 0.0233
